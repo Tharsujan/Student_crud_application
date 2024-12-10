@@ -7,12 +7,13 @@ import {
   View,
   Alert,
 } from 'react-native';
-import {createStudent} from './student';
+import {useCreateStudentMutation} from './services/studentApi';
 
 const AddStudentScreen = ({navigation}) => {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [createStudent] = useCreateStudentMutation();
 
   const handleSubmit = async () => {
     if (!name || !address || !phoneNumber) {
@@ -28,10 +29,9 @@ const AddStudentScreen = ({navigation}) => {
     };
 
     try {
-      const result = await createStudent(newStudent);
+      await createStudent(newStudent).unwrap(); // Call the mutation and unwrap the result
       Alert.alert('Success', 'Student added successfully!');
-      console.log('New student:', result);
-      navigation.goBack(); // Navigate back to HomeScreen
+      navigation.goBack(); // Navigate back to the previous screen
     } catch (error) {
       console.error('Error adding student:', error);
       Alert.alert('Error', 'Failed to add student.');

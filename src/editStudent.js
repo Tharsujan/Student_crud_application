@@ -8,7 +8,8 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import {UpdateStudent} from './student'; // Function to update student details
+import {useUpdateStudentMutation} from './services/studentApi';
+//import {UpdateStudent} from './student'; // Function to update student details
 
 const EditScreen = ({route, navigation}) => {
   const {student} = route.params || {}; // Destructure student from route.params
@@ -25,25 +26,28 @@ const EditScreen = ({route, navigation}) => {
     }
   }, [student]);
 
+  const [updateStudent] = useUpdateStudentMutation();
+
   const handleSave = async () => {
+    if (!name.trim() || !address.trim() || !phoneNo.trim()) {
+      Alert.alert('Validation Error', 'All fields are required.');
+      return;
+    }
+
+    const updatedStudent = {
+      id: student.id, // Existing student ID
+      name: name.trim(), // Updated name
+      address: address.trim(), // Updated address
+      phoneNo: parseInt(phoneNo, 10), // Updated phone number as an integer
+    };
+
     try {
-      const updatedStudent = {
-        id: student.id, // Existing student ID
-        name: name.trim(), // Updated name
-        address: address.trim(), // Updated address
-        phoneNo: parseInt(phoneNo, 10), // Updated phone number as an integer
-      };
-
-      const isUpdated = await UpdateStudent(updatedStudent);
-
-      if (isUpdated) {
-        Alert.alert('Success', 'Student details updated successfully');
-        navigation.goBack();
-      } else {
-        Alert.alert('Error', 'Failed to update student details');
-      }
+      await updateStudent(updatedStudent).unwrap(); // Call the mutation and unwrap the result
+      Alert.alert('Success', 'Student details updated successfully');
+      navigation.goBack(); // Navigate back to the previous screen
     } catch (error) {
-      Alert.alert('Error', error.message || 'An error occurred');
+      console.error('Error updating student:', error);
+      Alert.alert('Error', 'Failed to update student details');
     }
   };
 

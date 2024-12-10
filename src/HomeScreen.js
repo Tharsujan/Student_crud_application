@@ -7,58 +7,78 @@ import {
   Button,
   Alert,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons'; // Importing Material Icons
+
 import {useFocusEffect} from '@react-navigation/native';
-import {GetAllStudents, DeleteStudent} from './student';
+import {
+  useGetAllStudentsQuery,
+  useDeleteStudentMutation,
+} from './services/studentApi';
 
 const HomeScreen = ({navigation}) => {
-  const [students, setStudents] = useState([]);
+  const {data: students = [], isLoading, refetch} = useGetAllStudentsQuery();
+  const [deleteStudent] = useDeleteStudentMutation();
 
   // Function to fetch student details
   useFocusEffect(
     useCallback(() => {
-      fetchStudents(); // Fetch students when the screen is focused
+      refetch(); // Fetch students when the screen is focused
     }, []),
   );
 
-  const fetchStudents = async () => {
-    try {
-      const data = await GetAllStudents();
-      setStudents(data);
-    } catch (error) {
-      console.error('Error fetching students:', error);
-    }
-  };
+  // const handleDelete = async studentId => {
+  //   Alert.alert(
+  //     'Confirm Delete', // Alert Title
+  //     `Are you sure you want to delete student with ID: ${studentId}?`, // Alert Message
+  //     [
+  //       {
+  //         text: 'Cancel',
+  //         onPress: () => console.log('Delete cancelled'),
+  //         style: 'cancel', // Makes it look like a secondary action
+  //       },
+  //       {
+  //         text: 'Delete',
+  //         onPress: async () => {
+  //           try {
+  //             const isDeleted = await DeleteStudent(studentId);
+  //             if (isDeleted) {
+  //               Alert.alert(
+  //                 'Success',
+  //                 `Student with ID: ${studentId} deleted.`,
+  //               );
+  //               fetchStudents(); // Refresh the student list
+  //             }
+  //           } catch (error) {
+  //             Alert.alert(
+  //               'Error',
+  //               `Failed to delete student: ${error.message}`,
+  //             );
+  //           }
+  //         },
+  //         style: 'destructive', // Indicates a critical action
+  //       },
+  //     ],
+  //   );
+  // };
   const handleDelete = async studentId => {
     Alert.alert(
-      'Confirm Delete', // Alert Title
-      `Are you sure you want to delete student with ID: ${studentId}?`, // Alert Message
+      'Confirm Delete',
+      `Are you sure you want to delete student with ID: ${studentId}?`,
       [
-        {
-          text: 'Cancel',
-          onPress: () => console.log('Delete cancelled'),
-          style: 'cancel', // Makes it look like a secondary action
-        },
+        {text: 'Cancel', style: 'cancel'},
         {
           text: 'Delete',
           onPress: async () => {
             try {
-              const isDeleted = await DeleteStudent(studentId);
-              if (isDeleted) {
-                Alert.alert(
-                  'Success',
-                  `Student with ID: ${studentId} deleted.`,
-                );
-                fetchStudents(); // Refresh the student list
-              }
+              await deleteStudent(studentId).unwrap();
+              Alert.alert('Success', `Student with ID: ${studentId} deleted.`);
+              refetch(); // Refresh the data
             } catch (error) {
-              Alert.alert(
-                'Error',
-                `Failed to delete student: ${error.message}`,
-              );
+              Alert.alert('Error', 'Failed to delete student.');
             }
           },
-          style: 'destructive', // Indicates a critical action
         },
       ],
     );
@@ -71,6 +91,14 @@ const HomeScreen = ({navigation}) => {
     // Navigate to the AddStudentScreen or open a modal
     navigation.navigate('addStudent'); // Ensure you have this screen in your navigation
   };
+  if (isLoading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="green" />
+        {/* Green Activity Indicator */}
+      </View>
+    );
+  }
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Student Details</Text>
@@ -84,14 +112,20 @@ const HomeScreen = ({navigation}) => {
               <Text>Phone No: {student.phoneNo}</Text>
               <View style={styles.btnContainer}>
                 <TouchableOpacity
-                  style={styles.Button}
+                  // style={styles.Button}
+                  // onPress={() => handleDelete(student.id)}>
+                  // <Text style={styles.ButtonText}>Delete</Text>
+                  style={styles.iconButton}
                   onPress={() => handleDelete(student.id)}>
-                  <Text style={styles.ButtonText}>Delete</Text>
+                  <Icon name="delete" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.Button}
+                  // style={styles.Button}
+                  // onPress={() => handleEdit(student)}>
+                  // <Text style={styles.ButtonText}>Edit</Text>
+                  style={styles.iconButton}
                   onPress={() => handleEdit(student)}>
-                  <Text style={styles.ButtonText}>Edit</Text>
+                  <Icon name="edit" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
                 {/* <Button
                   title="Delete"
@@ -120,6 +154,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
+    backgroundColor: '#f5f5f5',
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#f5f5f5',
   },
   header: {
@@ -169,5 +209,14 @@ const styles = StyleSheet.create({
   },
   ButtonText: {
     color: 'white',
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 25,
+    backgroundColor: 'green',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 5,
   },
 });
